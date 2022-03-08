@@ -43,6 +43,7 @@ if [ "${TMPIP}" != "${WANIP}" ]; then
 
       if [ "${code}" != "200" ]; then
         curl -so /dev/null -H "Content-Type: application/json" -d '{"message": "'"$(caller) has encountered return code ${code}"'", "title": "router.int", "priority": "1", "api_token": "'"${NOTIFY_TOKEN}"'"}' -X PUT "http://192.168.1.107/api/v1.0/alert"
+        rt=$?
         log "$(caller) has encountered return code ${code}"
       fi
       if [ -z "${login_success}" ]; then
@@ -50,7 +51,6 @@ if [ "${TMPIP}" != "${WANIP}" ]; then
         log "Login failed for $(caller)"
       fi
           
-  		rt=$?
   		i=$((i+1))
   	done
   fi
