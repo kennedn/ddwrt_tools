@@ -16,3 +16,7 @@ log() {
 sExec() {
   $("$@" > /dev/null 2>&1)
 }
+
+toHex() {
+  printf "${1}" | hexdump -ve '1/1 "%x"'
+}

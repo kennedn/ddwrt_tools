@@ -24,7 +24,6 @@ fi
 if [ "${TMPIP}" != "${WANIP}" ]; then
   # Login to afraid and validate cookie, 6 months without login causes account to enter "dormant" state
   curl --interface ppp0 -so /dev/null "https://freedns.afraid.org/zc.php?step=2" -d "action=auth&submit=Login&username=${AFRAID_USER}&password=${AFRAID_PASSWORD}" -c - | grep -q dns_cookie && login_success=1 || login_success=
-  [ -n "${login_success}" ] && log "Login successful" || log "Login failed"
   
   # Try sending an update to afraid DDNS
   cOut=$(curl --interface ppp0 -w "%{http_code}" -sk "https://sync.afraid.org/u/${AFRAID_TOKEN}/") 
@@ -41,11 +40,20 @@ if [ "${TMPIP}" != "${WANIP}" ]; then
   		if [ "${i}" -ge 10 ]; then
   			break
   		fi
-  		curl -H "Content-Type: application/json" -d '{"message": "'"$0 has encountered return code ${code}"'", "title": "router.int", "priority": "1", "api_token": "${NOTIFY_TOKEN}"}' -X PUT "http://192.168.1.107/api/v1.0/alert"
+
+      if [ "${code}" != "200" ]; then
+        curl -so /dev/null -H "Content-Type: application/json" -d '{"message": "'"$(caller) has encountered return code ${code}"'", "title": "router.int", "priority": "1", "api_token": "'"${NOTIFY_TOKEN}"'"}' -X PUT "http://192.168.1.107/api/v1.0/alert"
+        log "$(caller) has encountered return code ${code}"
+      fi
+      if [ -z "${login_success}" ]; then
+        curl -so /dev/null -H "Content-Type: application/json" -d '{"message": "'"Login failed for $(caller)"'", "title": "router.int", "priority": "1", "api_token": "'"${NOTIFY_TOKEN}"'"}' -X PUT "http://192.168.1.107/api/v1.0/alert"
+        log "Login failed for $(caller)"
+      fi
+          
   		rt=$?
   		i=$((i+1))
   	done
   fi
   echo "${TMPIP}" > /tmp/ddns_oldWAN
-  cp /tmp/ddns_oldWAN $(dirname $0)/wan_ip
+  cp /tmp/ddns_oldWAN "$(dirname "$0")/wan_ip"
 fi
